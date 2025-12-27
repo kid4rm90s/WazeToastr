@@ -7,7 +7,9 @@ A toast notification library forked from [WazeDev's WazeWrap](https://github.com
 Include WazeToastr in your userscript by adding the main script:
 
 ```javascript
+// @require https://greasyfork.org/scripts/560385/code/WazeToastr.js
 // @require https://kid4rm90s.github.io/WazeToastr/WazeToastr.js
+
 ```
 
 
