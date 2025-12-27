@@ -32,6 +32,7 @@
         await initializeToastr();
 
         WazeToastr.Alerts = new Alerts();
+        WazeToastr.Interface = new Interface();
 
         WazeToastr.Ready = true;
 
@@ -353,5 +354,36 @@
                 });
             }
         }
+    }
+
+    function Interface() {
+        /**
+         * Shows the script update window with the given update text
+         * @function WazeToastr.Interface.ShowScriptUpdate
+         * @param {string} scriptName - The name of the script
+         * @param {string} version - The version number
+         * @param {string} updateHTML - HTML content describing the update
+         * @param {string} greasyforkLink - Link to Greasyfork page (optional)
+         * @param {string} forumLink - Link to forum discussion (optional)
+         **/
+        this.ShowScriptUpdate = function (scriptName, version, updateHTML, greasyforkLink = "", forumLink = "") {
+            // Simply show an info alert with the update information
+            let message = `<strong>Version ${version}</strong><br>${updateHTML}`;
+            
+            if (greasyforkLink || forumLink) {
+                message += '<br><br>';
+                if (greasyforkLink) {
+                    message += `<a href="${greasyforkLink}" target="_blank">Install Update</a>`;
+                }
+                if (greasyforkLink && forumLink) {
+                    message += ' | ';
+                }
+                if (forumLink) {
+                    message += `<a href="${forumLink}" target="_blank">Forum Discussion</a>`;
+                }
+            }
+            
+            WazeToastr.Alerts.info(scriptName, message, true, false);
+        };
     }
 }.call(this));
