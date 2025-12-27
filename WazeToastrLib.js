@@ -79,12 +79,12 @@
               $('<link/>', {
                 rel: 'stylesheet',
                 type: 'text/css',
-                href: 'https://cdn.jsdelivr.net/gh/WazeDev/toastr@master/build/toastr.min.css',
+                href: 'https://kid4rm90s.github.io/WazeToastr/toastr.min.css',
               }),
               $('<style type="text/css">.toast-container-wazetoastr > div {opacity: 0.95;} .toast-top-center-wide {top: 32px;}</style>')
             );
 
-            await $.getScript('https://cdn.jsdelivr.net/gh/WazeDev/toastr@master/build/toastr.min.js');
+            await $.getScript('https://kid4rm90s.github.io/WazeToastr/toastr.min.js');
             wazetoastr.options = {
                 target: '#map',
                 timeOut: 6000,
