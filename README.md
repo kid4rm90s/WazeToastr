@@ -239,9 +239,32 @@ updateMonitor.stop();
 - `start(intervalHours, checkImmediately)`: Start monitoring (default: 2 hours, check immediately)
 - `stop()`: Stop monitoring
 
+**Preferred Example:**
+
+```javascript
+function scriptupdatemonitor() {
+  if (WazeToastr?.Ready) {
+    // Create and start the ScriptUpdateMonitor
+    const updateMonitor = new WazeToastr.Alerts.ScriptUpdateMonitor(
+      scriptName,
+      scriptVersion,
+      downloadUrl,
+      GM_xmlhttpRequest
+    );
+    
+    // Check immediately on page load, then every 2 hours
+    updateMonitor.start(2, true);  // checkImmediately = true
+    
+    // Show the update dialog for the current version
+    WazeToastr.Interface.ShowScriptUpdate(scriptName, scriptVersion, updateMessage, downloadUrl, forumURL);
+  } else {
+    setTimeout(scriptupdatemonitor, 250);
+  }
+}
+scriptupdatemonitor();
+```
+
 **Example:**
-
-
 ```javascript
 function initUpdateMonitor() {
     if (!WazeToastr.Ready) {
@@ -284,26 +307,7 @@ WazeToastr.Interface.ShowScriptUpdate(
 
 **Example:**
 
-function scriptupdatemonitor() {
-  if (WazeToastr?.Ready) {
-    // Create and start the ScriptUpdateMonitor
-    const updateMonitor = new WazeToastr.Alerts.ScriptUpdateMonitor(
-      scriptName,
-      scriptVersion,
-      downloadUrl,
-      GM_xmlhttpRequest
-    );
-    
-    // Check immediately on page load, then every 2 hours
-    updateMonitor.start(2, true);  // checkImmediately = true
-    
-    // Show the update dialog for the current version
-    WazeToastr.Interface.ShowScriptUpdate(scriptName, scriptVersion, updateMessage, downloadUrl, forumURL);
-  } else {
-    setTimeout(scriptupdatemonitor, 250);
-  }
-}
-scriptupdatemonitor();
+
 
 ```javascript
 const updateMessage = `
