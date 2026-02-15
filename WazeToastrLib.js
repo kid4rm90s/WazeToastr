@@ -238,12 +238,13 @@
 
         this.prompt = function (scriptName, message, defaultText = '', okFunction, cancelFunction, inputType = 'text') {
             // Wrap the okFunction to handle type conversion based on inputType
-            const wrappedOkFunction = (inputValue) => {
+            // Note: wazetoastr.prompt passes TWO parameters: (event, inputValue)
+            const wrappedOkFunction = (event, inputValue) => {
+                // The second parameter is the actual input value from A.val()
                 let convertedValue = inputValue;
                 
                 if (inputType === 'number') {
                     // Convert to number and validate
-                    // Use Number() for cleaner conversion (handles both integers and decimals)
                     convertedValue = Number(inputValue);
                     
                     // Check if conversion resulted in NaN
