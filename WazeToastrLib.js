@@ -243,7 +243,8 @@
                 
                 if (inputType === 'number') {
                     // Convert to number and validate
-                    convertedValue = inputValue.includes('.') ? parseFloat(inputValue) : parseInt(inputValue);
+                    // Use Number() for cleaner conversion (handles both integers and decimals)
+                    convertedValue = Number(inputValue);
                     
                     // Check if conversion resulted in NaN
                     if (isNaN(convertedValue)) {
