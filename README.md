@@ -127,32 +127,68 @@ WazeToastr.Alerts.debug("MyScript", { userId: 123, action: "save" });
 
 ### 6. Prompt Alert
 
-Displays a dialog with a text input field for user input.
+Displays a dialog with a text input field for user input. Supports both text and number input types with automatic validation and type conversion.
 
 ```javascript
-WazeToastr.Alerts.prompt(scriptName, message, defaultText, okFunction, cancelFunction);
+WazeToastr.Alerts.prompt(scriptName, message, defaultText, okFunction, cancelFunction, inputType);
 ```
 
 **Parameters:**
 - `scriptName` (String): The name of your script (displayed as the title)
 - `message` (String): The prompt message/question to display
 - `defaultText` (String, optional): Default text to pre-fill in the input field (default: '')
-- `okFunction` (Function): Callback function when user clicks OK. Receives the input value as parameter
+- `okFunction` (Function): Callback function when user clicks OK. Receives the input value as parameter (String for 'text', Number for 'number')
 - `cancelFunction` (Function): Callback function when user clicks Cancel
+- `inputType` (String, optional): Type of input - either `'text'` or `'number'` (default: 'text')
+  - `'text'`: Returns input as a string (default behavior)
+  - `'number'`: Automatically converts and validates input as a number. Shows warning if invalid number entered.
 
-**Example:**
+**Examples:**
+
 ```javascript
+// Text input (default)
 WazeToastr.Alerts.prompt(
     "MyScript",
     "Enter your name:",
     "John Doe",
     function(inputValue) {
-        console.log("User entered:", inputValue);
+        console.log("User entered:", inputValue); // String
         WazeToastr.Alerts.success("MyScript", "Welcome " + inputValue);
     },
     function() {
         console.log("User cancelled the prompt");
     }
+);
+
+// Number input with automatic validation
+WazeToastr.Alerts.prompt(
+    "MyScript",
+    "Enter a number:",
+    "42",
+    function(inputValue) {
+        console.log("User entered:", inputValue); // Number (not string)
+        console.log(typeof inputValue); // "number"
+        WazeToastr.Alerts.success("MyScript", "You entered: " + inputValue);
+    },
+    function() {
+        console.log("User cancelled");
+    },
+    'number' // Specify number type
+);
+
+// Number input with decimal values
+WazeToastr.Alerts.prompt(
+    "MyScript",
+    "Enter speed limit:",
+    "65.5",
+    function(speed) {
+        // speed is already a number, no need to parse
+        if (speed > 70) {
+            WazeToastr.Alerts.warning("MyScript", "Speed limit is high!");
+        }
+    },
+    function() {},
+    'number'
 );
 ```
 

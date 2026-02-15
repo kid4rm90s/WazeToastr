@@ -236,8 +236,27 @@
             wazetoastr.debug(message, scriptName);
         }
 
-        this.prompt = function (scriptName, message, defaultText = '', okFunction, cancelFunction) {
-            wazetoastr.prompt(message, scriptName, { promptOK: okFunction, promptCancel: cancelFunction, PromptDefaultInput: defaultText });
+        this.prompt = function (scriptName, message, defaultText = '', okFunction, cancelFunction, inputType = 'text') {
+            // Wrap the okFunction to handle type conversion based on inputType
+            const wrappedOkFunction = (inputValue) => {
+                let convertedValue = inputValue;
+                
+                if (inputType === 'number') {
+                    // Convert to number and validate
+                    convertedValue = inputValue.includes('.') ? parseFloat(inputValue) : parseInt(inputValue);
+                    
+                    // Check if conversion resulted in NaN
+                    if (isNaN(convertedValue)) {
+                        this.warning(scriptName, 'Invalid number entered. Please enter a valid number.');
+                        return;
+                    }
+                }
+                
+                // Call the original okFunction with the converted value
+                if (okFunction) okFunction(convertedValue);
+            };
+            
+            wazetoastr.prompt(message, scriptName, { promptOK: wrappedOkFunction, promptCancel: cancelFunction, PromptDefaultInput: defaultText });
         }
 
         this.confirm = function (scriptName, message, okFunction, cancelFunction, okBtnText = "Ok", cancelBtnText = "Cancel") {
