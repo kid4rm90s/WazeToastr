@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WazeToastr
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2025.12.27.00
+// @version      2026.04.15.00
 // @description  A toastr notification library for WME scripts
 // @author       JustinS83/MapOMatic
 // @include      https://beta.waze.com/*editor*
@@ -10,42 +10,77 @@
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
-// Forked from WazeDev's WazeWrap script to use a more reliable CDN for displaying the alerts and the main library file.
+// Forked from WazeDev's WazeWrap script to use a more reliable CDN for displaying alerts.
+// Updated to follow WME SDK best practices for initialization and error handling.
 
 /* global WazeToastr */
 /* global $ */
+/* global unsafeWindow */
 /* jshint esversion:6 */
 
 var WazeToastr = {};
 
 (function() {
     'use strict';
-    const MIN_VERSION = '2019.05.01.01';
+    
     const WT_URL = 'https://kid4rm90s.github.io/WazeToastr/WazeToastrLib.js';
-
-    async function init(){
+    const MAX_INIT_ATTEMPTS = 1000;
+    const INIT_RETRY_MS = 100;
+    const SCRIPT_NAME = 'WazeToastr';
+    
+    /**
+     * Initialize WazeToastr library.
+     * Ensures single instance across page context (handles sandboxed and non-sandboxed).
+     */
+    async function init() {
         const sandboxed = typeof unsafeWindow !== 'undefined';
         const pageWindow = sandboxed ? unsafeWindow : window;
-        const wtAvailable = pageWindow.WazeToastr && (!pageWindow.WazeToastr.Version || pageWindow.WazeToastr.Version > MIN_VERSION);
-
-        if (wtAvailable) {
-            WazeToastr = pageWindow.WazeToastr;
-        } else {
-            pageWindow.WazeToastr = WazeToastr;
+        
+        try {
+            // Check if WazeToastr is already loaded
+            const wtAvailable = pageWindow.WazeToastr;
+            
+            if (wtAvailable) {
+                // Use existing instance
+                WazeToastr = pageWindow.WazeToastr;
+                console.debug(`${SCRIPT_NAME}: Using existing WazeToastr instance`);
+            } else {
+                // Register this instance on page window
+                pageWindow.WazeToastr = WazeToastr;
+                
+                // Expose to Tampermonkey sandbox if needed
+                if (sandboxed) {
+                    window.WazeToastr = WazeToastr;
+                }
+                
+                // Load library from CDN
+                console.debug(`${SCRIPT_NAME}: Loading WazeToastrLib from CDN`);
+                await $.getScript(WT_URL);
+                console.debug(`${SCRIPT_NAME}: WazeToastrLib loaded successfully`);
+            }
+        } catch (error) {
+            console.error(`${SCRIPT_NAME}: Initialization failed:`, error);
+            throw error;
         }
-        if (sandboxed) window.WazeToastr = WazeToastr;
-        if (!wtAvailable) await $.getScript(WT_URL);
     }
     
+    /**
+     * Bootstrap: Wait for jQuery, then initialize.
+     * Respects maximum retry limit to prevent infinite loops.
+     */
     function bootstrap(tries = 1) {
-        if (typeof $ != 'undefined')
-            init();
-        else if (tries < 1000)
-            setTimeout(function () { bootstrap(tries++); }, 100);
-        else
-            console.log('WazeToastr launcher failed to load');
+        if (typeof $ !== 'undefined') {
+            init().catch(err => {
+                console.error(`${SCRIPT_NAME}: Failed to initialize library`, err);
+            });
+        } else if (tries < MAX_INIT_ATTEMPTS) {
+            setTimeout(() => { bootstrap(tries + 1); }, INIT_RETRY_MS);
+        } else {
+            console.error(`${SCRIPT_NAME}: Bootstrap failed after ${MAX_INIT_ATTEMPTS} attempts. jQuery not loaded.`);
+        }
     }
     
+    // Start bootstrap process
     bootstrap();
     
 })();
