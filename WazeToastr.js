@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WazeToastr
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2025.12.27.00
+// @version      2026.04.15.08
 // @description  A toastr notification library for WME scripts
 // @author       JustinS83/MapOMatic
 // @include      https://beta.waze.com/*editor*
@@ -20,13 +20,13 @@ var WazeToastr = {};
 
 (function() {
     'use strict';
-    const MIN_VERSION = '2019.05.01.01';
+
     const WT_URL = 'https://kid4rm90s.github.io/WazeToastr/WazeToastrLib.js';
 
     async function init(){
         const sandboxed = typeof unsafeWindow !== 'undefined';
         const pageWindow = sandboxed ? unsafeWindow : window;
-        const wtAvailable = pageWindow.WazeToastr && (!pageWindow.WazeToastr.Version || pageWindow.WazeToastr.Version > MIN_VERSION);
+        const wtAvailable = pageWindow.WazeToastr && typeof pageWindow.WazeToastr === 'object';
 
         if (wtAvailable) {
             WazeToastr = pageWindow.WazeToastr;
