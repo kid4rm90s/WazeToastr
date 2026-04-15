@@ -35,7 +35,7 @@ var WazeToastr = {};
 (function() {
     'use strict';
     
-    const WT_URL = 'https://kid4rm90s.github.io/WazeToastr/WazeWrapLib.js';
+    const WT_URL = 'https://kid4rm90s.github.io/WazeToastr/WazeToastrLib.js';
     const MAX_INIT_ATTEMPTS = 1000;
     const INIT_RETRY_MS = 100;
     const SCRIPT_NAME = 'WazeToastr';
@@ -78,7 +78,7 @@ var WazeToastr = {};
                 // WazeToastrLib.js will handle WMESDK initialization if available
                 console.debug(`${SCRIPT_NAME}: Loading WazeToastrLib from CDN`);
                 await $.getScript(WT_URL);
-                console.info(`${SCRIPT_NAME} v2026.04.15.01 loaded successfully`);
+                console.info(`${SCRIPT_NAME} v2026.04.15.04 loaded successfully`);
                 if (pageWindow.WazeToastr && pageWindow.WazeToastr.Version) {
                     console.info(`${SCRIPT_NAME} Library v${pageWindow.WazeToastr.Version} ready`);
                 }
@@ -114,3 +114,4 @@ var WazeToastr = {};
 
     // Start bootstrap process
     // @run-at document-end ensures DOM is ready before scripts load
+    bootstrap();
