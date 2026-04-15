@@ -3,7 +3,7 @@
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
 // @version      2026.04.15.09
 // @description  A toastr notification library for WME scripts
-// @author       JustinS83/MapOMatic
+// @author       JustinS83/MapOMatic/kid4rm90s
 // @include      https://beta.waze.com/*editor*
 // @include      https://www.waze.com/*editor*
 // @exclude      https://www.waze.com/*user/editor/*
