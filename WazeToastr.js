@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WazeToastr
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2026.04.15.04
+// @version      2026.04.15.05
 // @description  A toastr notification library for WME scripts - WMESDK Compatible
 // @author       JustinS83/MapOMatic
 // @include      https://beta.waze.com/*editor*
@@ -78,7 +78,7 @@ var WazeToastr = {};
                 // WazeToastrLib.js will handle WMESDK initialization if available
                 console.debug(`${SCRIPT_NAME}: Loading WazeToastrLib from CDN`);
                 await $.getScript(WT_URL);
-                console.info(`${SCRIPT_NAME} v2026.04.15.04 loaded successfully`);
+                console.info(`${SCRIPT_NAME} v2026.04.15.05 loaded successfully`);
                 if (pageWindow.WazeToastr && pageWindow.WazeToastr.Version) {
                     console.info(`${SCRIPT_NAME} Library v${pageWindow.WazeToastr.Version} ready`);
                 }
