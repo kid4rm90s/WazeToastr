@@ -79,7 +79,10 @@ var WazeToastr = {};
                 // WazeToastrLib.js will handle WMESDK initialization if available
                 console.debug(`${SCRIPT_NAME}: Loading WazeToastrLib from CDN`);
                 await $.getScript(WT_URL);
-                console.debug(`${SCRIPT_NAME}: WazeToastrLib loaded successfully`);
+                console.info(`${SCRIPT_NAME} v2026.04.15.01 loaded successfully`);
+                if (pageWindow.WazeToastr && pageWindow.WazeToastr.Version) {
+                    console.info(`${SCRIPT_NAME} Library v${pageWindow.WazeToastr.Version} ready`);
+                }
             }
         } catch (error) {
             console.error(`${SCRIPT_NAME}: Initialization failed:`, error);
