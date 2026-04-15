@@ -1,29 +1,17 @@
 // ==UserScript==
 // @name         WazeToastr
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2026.04.15.06
-// @description  A toastr notification library for WME scripts - WMESDK Compatible
+// @version      2026.04.15.07
+// @description  A base library for WME script writers
 // @author       JustinS83/MapOMatic
 // @include      https://beta.waze.com/*editor*
 // @include      https://www.waze.com/*editor*
 // @exclude      https://www.waze.com/*user/editor/*
 // @grant        GM_xmlhttpRequest
-// @grant        unsafeWindow
 // ==/UserScript==
 
-/**
- * WazeToastr - Main Script
- * 
- * WMESDK Compatible (v1.0+)
- * Forked from WazeDev's WazeWrap script to use a more reliable CDN for displaying alerts.
- * Updated to work with WMESDK initialization pattern.
- * 
- * INITIALIZATION FLOW:
- * 1. Waits for @run-at document-end to ensure DOM is ready
- * 2. Waits for jQuery availability (WME dependency)
- * 3. Loads WazeToastrLib.js which initializes WMESDK
- * 4. Library then waits for window.SDK_INITIALIZED before starting
- */
+// Utility library for WME script writers providing common functionality.
+// Updated to follow WME SDK best practices for initialization and error handling.
 
 /* global WazeToastr */
 /* global $ */
@@ -43,20 +31,17 @@ var WazeToastr = {};
     /**
      * Initialize WazeToastr library.
      * Ensures single instance across page context (handles sandboxed and non-sandboxed).
-     * 
-     * With WMESDK support:
-     * - Detects if WMESDK is injected (window.SDK_INITIALIZED exists)
-     * - Falls back to legacy mode if needed
-     * - WazeToastrLib.js handles the actual WMESDK initialization
+     * @async
+     * @throws {Error} When library fails to load
      */
     async function init() {
         const sandboxed = typeof unsafeWindow !== 'undefined';
         const pageWindow = sandboxed ? unsafeWindow : window;
-
+        
         try {
             // Check if WazeToastr is already loaded
             const wtAvailable = pageWindow.WazeToastr;
-
+            
             if (wtAvailable) {
                 // Use existing instance
                 WazeToastr = pageWindow.WazeToastr;
@@ -64,55 +49,52 @@ var WazeToastr = {};
             } else {
                 // Register this instance on page window
                 pageWindow.WazeToastr = WazeToastr;
-
-                // Expose to Tampermonkey sandbox if needed
-                if (sandboxed) {
-                    window.WazeToastr = WazeToastr;
-                }
-
-                // Log WMESDK availability
-                const hasSDK = typeof pageWindow.SDK_INITIALIZED !== 'undefined';
-                console.debug(`${SCRIPT_NAME}: ${hasSDK ? 'WMESDK detected' : 'Legacy mode - no WMESDK'}`);
-
-                // Load library from CDN
-                // WazeToastrLib.js will handle WMESDK initialization if available
-                console.debug(`${SCRIPT_NAME}: Loading WazeToastrLib from CDN`);
+                
+                // Load external library
+                console.debug(`${SCRIPT_NAME}: Loading WazeToastr library from ${WT_URL}`);
                 await $.getScript(WT_URL);
-                console.info(`${SCRIPT_NAME} v2026.04.15.06 loaded successfully`);
-                if (pageWindow.WazeToastr && pageWindow.WazeToastr.Version) {
-                    console.info(`${SCRIPT_NAME} Library v${pageWindow.WazeToastr.Version} ready`);
-                }
             }
+            
+            // Ensure sandbox context has access
+            if (sandboxed) {
+                window.WazeToastr = WazeToastr;
+            }
+            
+            console.info(`${SCRIPT_NAME}: Initialization complete`);
         } catch (error) {
             console.error(`${SCRIPT_NAME}: Initialization failed:`, error);
             throw error;
         }
     }
-
+    
     /**
-     * Bootstrap: Wait for jQuery, then initialize.
-     * 
-     * WMESDK COMPATIBILITY:
-     * - jQuery is always available in WME (both legacy and WMESDK environments)
-     * - WazeToastr waits for jQuery availability
-     * - WazeToastrLib.js waits for window.SDK_INITIALIZED (if WMESDK is present)
-     * - Falls back gracefully if WMESDK is not available
-     * 
-     * Respects maximum retry limit to prevent infinite loops.
+     * Bootstrap function that waits for jQuery and initializes WazeToastr.
+     * Retries up to MAX_INIT_ATTEMPTS times if jQuery is not available.
+     * @param {number} tries - Current attempt number (default: 1)
      */
     function bootstrap(tries = 1) {
-        if (typeof $ !== 'undefined') {
-            init().catch(err => {
-                console.error(`${SCRIPT_NAME}: Failed to initialize library`, err);
-            });
-        } else if (tries < MAX_INIT_ATTEMPTS) {
-            setTimeout(() => { bootstrap(tries + 1); }, INIT_RETRY_MS);
-        } else {
-            console.error(`${SCRIPT_NAME}: Bootstrap failed after ${MAX_INIT_ATTEMPTS} attempts. jQuery not loaded.`);
+        try {
+            if (typeof $ !== 'undefined') {
+                // jQuery is available, proceed with initialization
+                console.debug(`${SCRIPT_NAME}: jQuery detected, initializing...`);
+                init().catch(error => {
+                    console.error(`${SCRIPT_NAME}: Async initialization error:`, error);
+                });
+            } else if (tries < MAX_INIT_ATTEMPTS) {
+                // jQuery not available yet, retry
+                setTimeout(() => {
+                    bootstrap(tries + 1);
+                }, INIT_RETRY_MS);
+            } else {
+                // Max attempts reached
+                console.error(`${SCRIPT_NAME}: Failed to initialize after ${MAX_INIT_ATTEMPTS} attempts. jQuery may not be available.`);
+            }
+        } catch (error) {
+            console.error(`${SCRIPT_NAME}: Bootstrap error:`, error);
         }
     }
-
+    
     // Start bootstrap process
-    // @run-at document-end ensures DOM is ready before scripts load
     bootstrap();
+    
 })();
