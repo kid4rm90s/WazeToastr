@@ -35,7 +35,7 @@ var WazeToastr = {};
 (function() {
     'use strict';
     
-    const WT_URL = 'https://kid4rm90s.github.io/WazeToastr/WazeToastrLib.js';
+    const WT_URL = 'https://kid4rm90s.github.io/WazeToastr/WazeWrapLib.js';
     const MAX_INIT_ATTEMPTS = 1000;
     const INIT_RETRY_MS = 100;
     const SCRIPT_NAME = 'WazeToastr';
