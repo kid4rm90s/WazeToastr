@@ -1,4 +1,4 @@
-﻿/* global getWmeSdk */
+/* global getWmeSdk */
 /* global WazeToastr */
 /* jshint esversion:6 */
 /* eslint-disable */
