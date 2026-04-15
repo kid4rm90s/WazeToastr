@@ -5,7 +5,7 @@
 
 /**
  * WazeToastr Library - WMESDK Compatible
- * Version: 2026.04.15.05
+ * Version: 2026.04.15.06
  */
 
 (function() {
@@ -74,7 +74,7 @@
 
         // Mark ready
         WazeToastr.Ready = true;
-        WazeToastr.Version = "2026.04.15.03";
+        WazeToastr.Version = "2026.04.15.06";
         WazeToastr.sdk = sdk;
 
         console.log(`WazeToastr initialized successfully (SDK: ${sdk ? 'Yes' : 'No'})`);
@@ -552,4 +552,8 @@
             }
         };
     }
-});
+
+    // Auto-initialize WazeToastr
+    console.log('WazeToastr library loaded, initializing...');
+
+})();
