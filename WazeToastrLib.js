@@ -24,6 +24,7 @@
  */
 
 /* global W */
+/* global getWmeSdk */
 /* global WazeToastr */
 /* jshint esversion:6 */
 /* eslint-disable */
@@ -84,7 +85,7 @@
             }
         }
         
-        WazeToastr.Version = "2026.04.15.08";
+        WazeToastr.Version = "2026.04.15.09";
         WazeToastr.isBetaEditor = /beta/.test(location.href);
         WazeToastr.SDK = sdk;  // Expose SDK for use by other scripts
 
