@@ -1,93 +1,51 @@
-/* global getWmeSdk */
+/* global W */
 /* global WazeToastr */
 /* jshint esversion:6 */
 /* eslint-disable */
 
-/**
- * WazeToastr Library - WMESDK Compatible
- * Version: 2026.04.15.06
- */
-
-(function() {
+(function () {
     'use strict';
-
-    // Settings object
     let wtSettings;
 
-    // SDK instance
-    let sdk = null;
-
-    // WazeToastr global object (will be exposed to window)
-    const WazeToastr = window.WazeToastr;
-
-    // ===== Bootstrap - Wait for Dependencies =====
-
     function bootstrap(tries = 1) {
-        if (typeof $ !== 'undefined') {
+        if (!location.href.match(/^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/))
+            return;
+
+        if (W && W.map &&
+            W.model && W.loginManager.user &&
+            $)
             init();
-        } else if (tries < 1000) {
-            setTimeout(function () { bootstrap(tries++); }, 100);
-        } else {
-            console.log('WazeToastr failed to load - jQuery not available');
-        }
+        else if (tries < 1000)
+            setTimeout(function () { bootstrap(++tries); }, 200);
+        else
+            console.log('WazeToastr failed to load');
     }
 
     bootstrap();
 
-    // ===== Initialization Entry Point =====
     async function init() {
-        console.log('Initializing WazeToastr...');
-
-        // Get SDK
-        if (!sdk) {
-            try {
-                const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-                if (pageWindow.SDK_INITIALIZED) {
-                    await pageWindow.SDK_INITIALIZED;
-                    sdk = pageWindow.getWmeSdk({ scriptName: 'WazeToastr', scriptId: 'waze-toastr' });
-                    console.log('WazeToastr obtained SDK');
-                }
-            } catch (e) {
-                console.warn('Could not obtain SDK:', e);
-            }
-        }
+        console.log("WazeToastr initializing...");
+        WazeToastr.Version = "2025.04.11.00";
+        WazeToastr.isBetaEditor = /beta/.test(location.href);
 
         loadSettings();
+        initializeScriptUpdateInterface();
+        await initializeToastr();
 
-        // Initialize script update interface (dashboard, alerts history)
-        try {
-            initializeScriptUpdateInterface();
-        } catch (e) {
-            console.warn('Error initializing script update interface:', e);
-        }
-
-        // Initialize toastr
-        try {
-            await initializeToastr();
-        } catch (e) {
-            console.warn('Error loading toastr:', e);
-        }
-
-        // Instantiate modules
         WazeToastr.Alerts = new Alerts();
         WazeToastr.Interface = new Interface();
 
-        // Mark ready
         WazeToastr.Ready = true;
-        WazeToastr.Version = "2026.04.15.06";
-        WazeToastr.sdk = sdk;
 
-        console.log(`WazeToastr initialized successfully (SDK: ${sdk ? 'Yes' : 'No'})`);
+        console.log('WazeToastr Loaded');
     }
 
-    // ===== Settings Management =====
-
     function loadSettings() {
-        wtSettings = $.parseJSON(localStorage.getItem("WazeToastrSettings"));
-        let defaultSettings = {
+        var loadedSettings = $.parseJSON(localStorage.getItem("WazeToastrSettings"));
+        var defaultSettings = {
             editorPIN: ""
         };
-        wtSettings = $.extend({}, defaultSettings, wtSettings);
+        wtSettings = $.extend({}, defaultSettings, loadedSettings);
     }
 
     function saveSettings() {
@@ -95,8 +53,6 @@
             localStorage.setItem("WazeToastrSettings", JSON.stringify(wtSettings));
         }
     }
-
-    // ===== Toastr Management =====
 
     async function initializeToastr() {
         let toastrSettings = {};
@@ -122,16 +78,16 @@
             }
             loadSettings();
             $('head').append(
-                $('<link/>', {
-                    rel: 'stylesheet',
-                    type: 'text/css',
-                    href: 'https://kid4rm90s.github.io/WazeToastr/toastr.min.css'
-                }),
-                $('<style type="text/css">.toast-container-wazetoastr > div {opacity: 0.95;} .toast-top-center-wide {top: 32px;} .WTAlertsHistory {display: block; width:32px; height:32px; background-color: #F89406; position: absolute; top:35px; left:40px; border-radius: 10px; border: 2px solid; box-size: border-box; z-index: 1050;} .WTAlertsHistory:hover #WTAlertsHistory-list{display:block;} .WTAlertsHistory > .fa-exclamation-triangle {position: absolute; left:50%; margin-left:-9px; margin-top:8px;} #WTAlertsHistory-list{display:none; position:absolute; top:28px; border:2px solid black; border-radius:10px; background-color:white; padding:4px; overflow-y:auto; max-height: 300px;} #WTAlertsHistory-list #toast-container-history > div {max-width:500px; min-width:500px; border-radius:10px;} #WTAlertsHistory-list > #toast-container-history{ position:static; }</style>')
+              $('<link/>', {
+                rel: 'stylesheet',
+                type: 'text/css',
+                href: 'https://kid4rm90s.github.io/WazeToastr/toastr.min.css',
+              }),
+              $('<style type="text/css">.toast-container-wazetoastr > div {opacity: 0.95;} .toast-top-center-wide {top: 32px;}</style>')
             );
 
             await $.getScript('https://kid4rm90s.github.io/WazeToastr/toastr.min.js');
-
+            
             // Wait for wazetoastr to be defined
             await new Promise((resolve) => {
                 const checkToastr = () => {
@@ -143,7 +99,7 @@
                 };
                 checkToastr();
             });
-
+            
             wazetoastr.options = {
                 target: '#map',
                 timeOut: 6000,
@@ -155,14 +111,16 @@
                 progressBar: true
             };
 
+            if ($('.WTAlertsHistory').length > 0)
+                return;
             var $sectionToastr = $("<div>", { style: "padding:8px 16px", id: "wmeWTScriptUpdates" });
             $sectionToastr.html([
                 '<div class="WTAlertsHistory" title="Script Alert History"><i class="fa fa-exclamation-triangle fa-lg"></i><div id="WTAlertsHistory-list"><div id="toast-container-history" class="toast-container-wazetoastr"></div></div></div>'
             ].join(' '));
             $("#WazeMap").append($sectionToastr.html());
 
-            $('.WTAlertsHistory').css('left', toastrSettings.historyLeftLoc + 'px');
-            $('.WTAlertsHistory').css('top', toastrSettings.historyTopLoc + 'px');
+            $('.WTAlertsHistory').css('left', `${toastrSettings.historyLeftLoc}px`);
+            $('.WTAlertsHistory').css('top', `${toastrSettings.historyTopLoc}px`);
 
             try {
                 await $.getScript("https://greasyfork.org/scripts/454988-jqueryui-custom-build/code/jQueryUI%20custom%20build.js");
@@ -195,12 +153,9 @@
         }
     }
 
-    // ===== Script Update Interface =====
-
     function initializeScriptUpdateInterface() {
-        console.log("Creating script update interface");
+        console.log("creating script update interface");
         injectCSS();
-
         var $section = $("<div>", { style: "padding:8px 16px", id: "wmeWTScriptUpdates" });
         $section.html([
             '<div id="WTSU-Container" class="fa" style="position:fixed; top:20%; left:40%; z-index:1000; display:none;">',
@@ -226,8 +181,6 @@
             $(this).addClass("WTSU-active");
         });
     }
-
-    // ===== Injects CSS (used by dashboard and toastr) =====
 
     function injectCSS() {
         let css = [
@@ -517,12 +470,7 @@
             if ((updateHTML && updateHTML.length > 0) && (typeof settings.ScriptUpdateHistory[scriptName] === "undefined" || settings.ScriptUpdateHistory[scriptName] != version)) {
                 let currCount = $('.WTSU-script-item').length;
                 let divID = (scriptName + ("" + version)).toLowerCase().replace(/[^a-z-_0-9]/g, '');
-                // Safely create tab link to avoid injection vulnerabilities
-                let $tabLink = $('<a>').attr('href', '#' + divID)
-                    .addClass('WTSU-script-item')
-                    .addClass(currCount === 0 ? 'WTSU-active' : '')
-                    .text(scriptName);
-                $('#WTSU-script-list').append($tabLink);
+                $('#WTSU-script-list').append(`<a href="#${divID}" class="WTSU-script-item ${currCount === 0 ? 'WTSU-active' : ''}">${scriptName}</a>`); //add the script's tab
                 $("#WTSU-updateCount").html(parseInt($("#WTSU-updateCount").html()) + 1); //increment the total script updates value
                 let install = "", forum = "";
                 if (greasyforkLink != "")
@@ -533,17 +481,7 @@
                 if (forumLink != "" || greasyforkLink != "") {
                     footer = `<span class="WTSUFooter" style="margin-bottom:2px; display:block;">${install}${(greasyforkLink != "" && forumLink != "") ? " | " : ""}${forum}</span>`;
                 }
-                // Safely create update container to handle user HTML content
-                let $updateDiv = $('<div>').attr('id', divID);
-                let $content = $('<span>');
-                $content.append($('<h3>').text(version));
-                $content.append($('<br>'));
-                $content.append($.parseHTML(updateHTML)); // Safe HTML parsing - use parseHTML instead of $() to avoid selector interpretation
-                $updateDiv.append($content);
-                if (footer) {
-                    $updateDiv.append($(footer));
-                }
-                $('#WTSU-script-update-info').append($updateDiv);
+                $('#WTSU-script-update-info').append(`<div id="${divID}"><span><h3>${version}</h3><br>${updateHTML}</span>${footer}</div>`);
                 $('#WTSU-Container').show();
                 if (currCount === 0)
                     $('#WTSU-script-list').find("a")[0].click();
@@ -552,8 +490,4 @@
             }
         };
     }
-
-    // Auto-initialize WazeToastr
-    console.log('WazeToastr library loaded, initializing...');
-
-})();
+}.call(this));
