@@ -538,7 +538,7 @@
                 let $content = $('<span>');
                 $content.append($('<h3>').text(version));
                 $content.append($('<br>'));
-                $content.append($(updateHTML)); // Safe HTML parsing
+                $content.append($.parseHTML(updateHTML)); // Safe HTML parsing - use parseHTML instead of $() to avoid selector interpretation
                 $updateDiv.append($content);
                 if (footer) {
                     $updateDiv.append($(footer));
