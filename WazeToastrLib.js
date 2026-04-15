@@ -62,7 +62,7 @@
             scriptName: "WazeToastr"
         });
 
-        WazeToastr.Version = "2026.04.15.03";
+        WazeToastr.Version = "2026.04.15.04";
         WazeToastr.isBetaEditor = /beta/.test(location.href);
         WazeToastr.sdk = sdk; // Expose SDK for other scripts
 
