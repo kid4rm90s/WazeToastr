@@ -1,4 +1,30 @@
+/**
+ * WazeToastr Library - Notification system for Waze Map Editor scripts
+ * 
+ * WMESDK Compatibility:
+ * - Uses window.SDK_INITIALIZED promise for proper initialization (recommended pattern)
+ * - Supports both modern WMESDK and deprecated W/Waze objects (for backward compatibility)
+ * - Provides SDK instance to dependent scripts via WazeToastr.SDK
+ * - Uses modern JSON parsing (no jQuery.parseJSON) and ES6+ patterns
+ * 
+ * Features:
+ * - Toast notifications (success, info, warning, error, debug)
+ * - Persistent notification history panel
+ * - Script update monitoring and notifications
+ * - Settings persistence using localStorage
+ * - Full error handling and fallback support
+ * 
+ * Usage:
+ * WazeToastr.Alerts.success(scriptName, message);
+ * WazeToastr.Alerts.confirm(scriptName, message, okCallback, cancelCallback);
+ * const monitor = new WazeToastr.Alerts.ScriptUpdateMonitor(...);
+ * 
+ * @requires jQuery (loaded by WazeToastr launcher)
+ * @requires WME SDK_INITIALIZED promise (standard WME environment)
+ */
+
 /* global W */
+/* global getWmeSdk */
 /* global WazeToastr */
 /* jshint esversion:6 */
 /* eslint-disable */
@@ -6,27 +32,62 @@
 (function () {
     'use strict';
     let wtSettings;
-
-    function bootstrap(tries = 1) {
-        if (!location.href.match(/^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/))
+    let sdk = null;
+    
+    /**
+     * Bootstrap initialization using WME SDK promise pattern
+     * Waits for both jQuery and SDK_INITIALIZED to be ready
+     */
+    function bootstrap() {
+        const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        
+        // Ensure jQuery is available
+        if (typeof $ === 'undefined') {
+            setTimeout(bootstrap, 100);
             return;
-
-        if (W && W.map &&
-            W.model && W.loginManager.user &&
-            $)
-            init();
-        else if (tries < 1000)
-            setTimeout(function () { bootstrap(++tries); }, 200);
-        else
-            console.log('WazeToastr failed to load');
+        }
+        
+        // Wait for WME SDK to be initialized
+        if (pageWindow.SDK_INITIALIZED) {
+            pageWindow.SDK_INITIALIZED.then(init).catch((err) => {
+                console.error('WazeToastr: Failed to initialize SDK:', err);
+                // Fallback: try to initialize anyway if SDK already available
+                if (pageWindow.getWmeSdk) {
+                    init();
+                }
+            });
+        } else {
+            // Fallback for older WME versions
+            console.warn('WazeToastr: SDK_INITIALIZED not available, using fallback initialization');
+            setTimeout(bootstrap, 200);
+        }
     }
 
     bootstrap();
 
+    /**
+     * Initialize WazeToastr library with WMESDK support
+     */
     async function init() {
         console.log("WazeToastr initializing...");
-        WazeToastr.Version = "2025.04.11.00";
+        const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        
+        // Initialize SDK if not already done
+        if (!sdk && pageWindow.getWmeSdk) {
+            try {
+                sdk = pageWindow.getWmeSdk({ 
+                    scriptName: 'WazeToastr',
+                    scriptId: 'wazetoastr'
+                });
+                console.log('WazeToastr obtained WMESDK instance');
+            } catch (err) {
+                console.warn('WazeToastr: Could not obtain SDK, some features may be limited:', err);
+            }
+        }
+        
+        WazeToastr.Version = "2026.04.15.09";
         WazeToastr.isBetaEditor = /beta/.test(location.href);
+        WazeToastr.SDK = sdk;  // Expose SDK for use by other scripts
 
         loadSettings();
         initializeScriptUpdateInterface();
@@ -41,39 +102,61 @@
     }
 
     function loadSettings() {
-        var loadedSettings = $.parseJSON(localStorage.getItem("WazeToastrSettings"));
-        var defaultSettings = {
-            editorPIN: ""
-        };
-        wtSettings = $.extend({}, defaultSettings, loadedSettings);
-    }
-
-    function saveSettings() {
-        if (localStorage) {
-            localStorage.setItem("WazeToastrSettings", JSON.stringify(wtSettings));
+        try {
+            const loadedSettings = localStorage.getItem("WazeToastrSettings");
+            const parsedSettings = loadedSettings ? JSON.parse(loadedSettings) : {};
+            const defaultSettings = {
+                editorPIN: ""
+            };
+            wtSettings = Object.assign({}, defaultSettings, parsedSettings);
+        } catch (err) {
+            console.warn('WazeToastr: Error loading settings from localStorage:', err);
+            wtSettings = { editorPIN: "" };
         }
     }
 
+    function saveSettings() {
+        try {
+            if (localStorage) {
+                localStorage.setItem("WazeToastrSettings", JSON.stringify(wtSettings));
+            }
+        } catch (err) {
+            console.warn('WazeToastr: Error saving settings to localStorage:', err);
+        }
+    }
+
+    /**
+     * Initialize toastr notification system and history panel
+     */
     async function initializeToastr() {
         let toastrSettings = {};
         try {
             function loadSettings() {
-                var loadedSettings = $.parseJSON(localStorage.getItem("WTToastr"));
-                var defaultSettings = {
-                    historyLeftLoc: 35,
-                    historyTopLoc: 40
-                };
-                toastrSettings = $.extend({}, defaultSettings, loadedSettings)
+                try {
+                    const loadedSettings = localStorage.getItem("WTToastr");
+                    const parsedSettings = loadedSettings ? JSON.parse(loadedSettings) : {};
+                    const defaultSettings = {
+                        historyLeftLoc: 35,
+                        historyTopLoc: 40
+                    };
+                    toastrSettings = Object.assign({}, defaultSettings, parsedSettings);
+                } catch (err) {
+                    console.warn('WazeToastr: Error loading toastr settings:', err);
+                    toastrSettings = { historyLeftLoc: 35, historyTopLoc: 40 };
+                }
             }
 
             function saveSettings() {
-                if (localStorage) {
-                    var localsettings = {
-                        historyLeftLoc: toastrSettings.historyLeftLoc,
-                        historyTopLoc: toastrSettings.historyTopLoc
-                    };
-
-                    localStorage.setItem("WTToastr", JSON.stringify(localsettings));
+                try {
+                    if (localStorage) {
+                        const localsettings = {
+                            historyLeftLoc: toastrSettings.historyLeftLoc,
+                            historyTopLoc: toastrSettings.historyTopLoc
+                        };
+                        localStorage.setItem("WTToastr", JSON.stringify(localsettings));
+                    }
+                } catch (err) {
+                    console.warn('WazeToastr: Error saving toastr settings:', err);
                 }
             }
             loadSettings();
@@ -153,6 +236,10 @@
         }
     }
 
+    /**
+     * Initialize the script update notification interface
+     * Creates a modal window for displaying available script updates
+     */
     function initializeScriptUpdateInterface() {
         console.log("creating script update interface");
         injectCSS();
@@ -204,6 +291,16 @@
         $('<style type="text/css">' + css + '</style>').appendTo('head');
     }
 
+    /**
+     * Alerts notification system
+     * Provides a unified interface for displaying toast notifications to users
+     * WMESDK Compatible: Works with both deprecated W object and new WMESDK
+     * 
+     * @example
+     * WazeToastr.Alerts.success(scriptName, "Operation completed successfully");
+     * WazeToastr.Alerts.error(scriptName, "An error occurred");
+     * WazeToastr.Alerts.confirm(scriptName, "Continue?", okCallback, cancelCallback);
+     */
     function Alerts() {
         this.success = function (scriptName, message) {
             $(wazetoastr.success(message, scriptName)).clone().prependTo('#WTAlertsHistory-list > .toast-container-wazetoastr').find('.toast-close-button').remove();
@@ -431,6 +528,10 @@
         }
     }
 
+    /**
+     * Interface for managing script updates and notifications
+     * WMESDK Compatible: Integrates with WazeToastr alert system
+     */
     function Interface() {
         /**
          * Shows the script update window with the given update text
@@ -444,24 +545,28 @@
         this.ShowScriptUpdate = function (scriptName, version, updateHTML, greasyforkLink = "", forumLink = "") {
             let settings;
             function loadSettings() {
-                var loadedSettings = $.parseJSON(localStorage.getItem("WTScriptUpdate"));
-                var defaultSettings = {
-                    ScriptUpdateHistory: {},
-                };
-                settings = loadedSettings ? loadedSettings : defaultSettings;
-                for (var prop in defaultSettings) {
-                    if (!settings.hasOwnProperty(prop))
-                        settings[prop] = defaultSettings[prop];
+                try {
+                    const loadedSettings = localStorage.getItem("WTScriptUpdate");
+                    const parsedSettings = loadedSettings ? JSON.parse(loadedSettings) : {};
+                    const defaultSettings = {
+                        ScriptUpdateHistory: {},
+                    };
+                    settings = Object.assign({}, defaultSettings, parsedSettings);
+                } catch (err) {
+                    console.warn('WazeToastr: Error loading script update settings:', err);
+                    settings = { ScriptUpdateHistory: {} };
                 }
             }
-
             function saveSettings() {
-                if (localStorage) {
-                    var localsettings = {
-                        ScriptUpdateHistory: settings.ScriptUpdateHistory,
-                    };
-
-                    localStorage.setItem("WTScriptUpdate", JSON.stringify(localsettings));
+                try {
+                    if (localStorage) {
+                        const localsettings = {
+                            ScriptUpdateHistory: settings.ScriptUpdateHistory,
+                        };
+                        localStorage.setItem("WTScriptUpdate", JSON.stringify(localsettings));
+                    }
+                } catch (err) {
+                    console.warn('WazeToastr: Error saving script update settings:', err);
                 }
             }
 
