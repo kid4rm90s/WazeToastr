@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WazeToastr
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2026.04.15.08
+// @version      2026.04.15.09
 // @description  A toastr notification library for WME scripts
 // @author       JustinS83/MapOMatic
 // @include      https://beta.waze.com/*editor*
@@ -14,6 +14,8 @@
 
 /* global WazeToastr */
 /* global $ */
+/* global unsafeWindow */
+/* global getWmeSdk */
 /* jshint esversion:6 */
 
 var WazeToastr = {};
